@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Sahifa kitob doʻkoni: kitoblarni bepul oʻqib koʻring, savatga qoʻshing va uyingizgacha yetkazib olish bilan buyurtma bering.">
+<meta name="theme-color" content="#1f4fbf">
+<title>Sahifa kitob doʻkoni</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f4fbf'/%3E%3Cpath d='M14 18c7-3 13-2 18 2v28c-5-4-11-5-18-2z' fill='%23fff'/%3E%3Cpath d='M50 18c-7-3-13-2-18 2v28c5-4 11-5 18-2z' fill='%23e5b44c'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;0,800;1,500&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sticky header + single column app; catalog grid of generated covers; book page two-column; reader full-width paper column */
+:root{
+  --bg:#f3f5fa; --surface:#ffffff; --ink:#17203a; --muted:#5b6480; --line:#dde2ee;
+  --accent:#1f4fbf; --accent-ink:#ffffff; --accent-soft:#e6ecfb; --gold:#b9830f; --ok:#1d8556; --err:#c0392b;
+  --display:"Alegreya", Georgia, serif; --ui:"Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1322; --surface:#161d31; --ink:#e7ebf6; --muted:#9aa3bd; --line:#28314b;
+  --accent:#7ea2ff; --accent-ink:#0e1322; --accent-soft:#1d2848; --gold:#e5b44c; --ok:#4cc08a; --err:#ff7b6b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1322; --surface:#161d31; --ink:#e7ebf6; --muted:#9aa3bd; --line:#28314b;
+  --accent:#7ea2ff; --accent-ink:#0e1322; --accent-soft:#1d2848; --gold:#e5b44c; --ok:#4cc08a; --err:#ff7b6b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+a{color:var(--accent)}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;padding-block:12px}
+.logo{display:flex;align-items:baseline;gap:6px;text-decoration:none;color:var(--ink);flex-shrink:0}
+.logo b{font-family:var(--display);font-size:26px;font-weight:800;letter-spacing:-.5px}
+.logo span{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.search{flex:1;min-width:0;position:relative}
+.search input{width:100%;padding:10px 14px 10px 38px;border:1px solid var(--line);border-radius:999px;background:var(--bg)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.cartbtn{display:flex;align-items:center;gap:8px;border:0;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:999px;font-weight:600;flex-shrink:0}
+.cartbtn .n{background:var(--accent-ink);color:var(--accent);border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;font-size:12px;padding:0 6px}
+@media (max-width:560px){.logo span{display:none}.cartbtn .lbl{display:none}.bar{flex-wrap:wrap}.search{order:3;flex-basis:100%}}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
+.chip{border:1px solid var(--line);background:transparent;padding:6px 14px;border-radius:999px;white-space:nowrap;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+main{padding-block:28px 64px;min-height:70vh}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:center;margin-bottom:36px}
+.hero h1{font-size:clamp(30px,5vw,50px);font-weight:800}
+.hero h1 em{color:var(--accent);font-style:italic;font-weight:500}
+.hero p{color:var(--muted);max-width:52ch;font-size:16px}
+.perks{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;font-size:14px}
+.perks div{display:flex;gap:6px;align-items:center}
+.perks i{width:8px;height:8px;border-radius:2px;background:var(--gold);display:inline-block}
+.shelf{display:flex;gap:10px;justify-content:center;align-items:flex-end;min-width:0}
+.shelf .cover{width:28%;max-width:130px}
+.shelf .cover:nth-child(2){width:34%;max-width:160px}
+@media (max-width:720px){.hero{grid-template-columns:1fr}.shelf{order:-1}}
+
+.sechead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.sechead h2{font-size:26px}
+.sechead select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.count{color:var(--muted);font-size:14px}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:28px 20px}
+@media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 14px}}
+.card{display:flex;flex-direction:column;gap:8px;min-width:0}
+.card a.cv{display:block;text-decoration:none}
+.card .t{font-family:var(--display);font-weight:700;font-size:18px;line-height:1.2;color:var(--ink);text-decoration:none}
+.card .a{color:var(--muted);font-size:13.5px}
+.card .row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto}
+.price{font-weight:700;font-variant-numeric:tabular-nums}
+.add{border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
+.add:hover{background:var(--accent);color:var(--accent-ink)}
+.rate{font-size:13px;color:var(--gold);font-weight:600}
+
+/* generated cover */
+.cover{position:relative;aspect-ratio:2/3;max-width:100%;border-radius:4px 10px 10px 4px;overflow:hidden;color:#fff;
+  box-shadow:0 1px 0 rgba(0,0,0,.08),0 10px 24px -12px rgba(15,20,40,.55);transition:transform .25s}
+.card a.cv:hover .cover{transform:translateY(-4px) rotate(-.6deg)}
+.cover .pat{position:absolute;inset:0;opacity:.32}
+.cover::before{content:"";position:absolute;left:0;top:0;bottom:0;width:7%;background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(255,255,255,.08));z-index:2}
+.cover .in{position:absolute;inset:0;padding:12% 10% 10% 16%;display:flex;flex-direction:column;justify-content:space-between;z-index:3}
+.cover .ct{font-family:var(--display);font-weight:800;font-size:clamp(15px,2.1vw,22px);line-height:1.08;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.cover .ca{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.9}
+.cover .medal{width:34%;aspect-ratio:1;border-radius:50%;border:2px solid currentColor;opacity:.75;align-self:flex-end}
+.badge{position:absolute;top:8px;right:8px;z-index:4;background:var(--gold);color:#1a1405;font-size:11px;font-weight:700;padding:3px 7px;border-radius:5px}
+
+/* book page */
+.crumb{font-size:14px;color:var(--muted);margin-bottom:18px}
+.crumb a{color:var(--muted)}
+.book{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:40px}
+@media (max-width:720px){.book{grid-template-columns:1fr}.book .cover{max-width:220px;margin:0 auto}}
+.book h1{font-size:clamp(30px,4.5vw,44px);font-weight:800}
+.book .by{font-size:17px;color:var(--muted);margin:6px 0 14px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:18px 0}
+.meta div{background:var(--surface);padding:10px 14px}
+.meta small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.meta b{font-variant-numeric:tabular-nums}
+.desc{max-width:62ch;font-size:16px}
+.fmt{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 14px}
+.fmt label{flex:1;min-width:150px;border:1.5px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;background:var(--surface)}
+.fmt input{position:absolute;opacity:0}
+.fmt label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.fmt label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.fmt small{display:block;color:var(--muted)}
+.fmt b{font-size:18px;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:13px 20px;font-weight:600;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
+.btn.pri{background:var(--accent);color:var(--accent-ink)}
+.btn.sec{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.sec:hover{border-color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.note{font-size:13.5px;color:var(--muted);margin-top:12px}
+
+/* reader */
+.reader{border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.rtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
+.rtools .g{display:flex;gap:6px;align-items:center}
+.rtools button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px;font-size:13px}
+.rtools button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.rprog{height:3px;background:var(--line)}
+.rprog i{display:block;height:100%;background:var(--gold);width:0;transition:width .2s}
+.page{padding:40px max(18px,6vw) 48px;transition:background .2s,color .2s}
+.page.l{background:#fdfdfb;color:#1d2230}
+.page.s{background:#f4ead6;color:#3b2d17}
+.page.n{background:#12161f;color:#c9cfdc}
+.page article{max-width:36em;margin:0 auto;font-family:var(--display);line-height:1.7}
+.page h2{font-size:1.6em;margin-bottom:.2em}
+.page .bk{font-family:var(--ui);font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.6;margin-bottom:1.6em}
+.page p{margin:0 0 1em;text-indent:1.5em;hyphens:auto}
+.page p:first-of-type{text-indent:0}
+.page p:first-of-type::first-letter{font-size:3.2em;float:left;line-height:.9;padding:.05em .1em 0 0;font-weight:800;color:var(--gold)}
+.page .poem p{text-indent:0;white-space:pre-line}
+.page .poem p:first-of-type::first-letter{font-size:inherit;float:none;padding:0;font-weight:inherit;color:inherit}
+.rnav{display:flex;justify-content:space-between;gap:10px;max-width:36em;margin:2.5em auto 0;font-family:var(--ui)}
+.rnav button{border:1px solid currentColor;background:transparent;border-radius:8px;padding:9px 14px;opacity:.85}
+.rnav button:disabled{opacity:.25}
+.endbox{max-width:36em;margin:2em auto 0;padding:18px;border:1px dashed currentColor;border-radius:10px;font-family:var(--ui);text-align:center}
+
+/* cart & checkout */
+.two{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+@media (max-width:820px){.two{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.line{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line .cover{width:64px;border-radius:2px 5px 5px 2px}
+.line .cover .in{display:none}
+.line h3{font-size:17px}
+.line .sub{color:var(--muted);font-size:13px}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;margin-top:6px}
+.qty button{border:0;background:transparent;width:30px;height:30px}
+.qty span{min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.rm{border:0;background:transparent;color:var(--muted);font-size:13px;text-decoration:underline;margin-left:10px}
+.sum{display:flex;flex-direction:column;gap:8px}
+.sum .r{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
+.sum .r.tot{border-top:1px solid var(--line);padding-top:12px;margin-top:4px;font-size:18px;font-weight:700}
+.sum .hint{font-size:13px;color:var(--ok)}
+.meter{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ok)}
+.empty{text-align:center;padding:60px 16px}
+.empty h2{font-size:28px;margin-bottom:8px}
+
+.steps{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap}
+.steps div{flex:1;min-width:110px;font-size:13px;padding-top:8px;border-top:3px solid var(--line);color:var(--muted)}
+.steps div.on{border-color:var(--accent);color:var(--ink);font-weight:600}
+.steps div.done{border-color:var(--ok);color:var(--ok)}
+fieldset{border:0;padding:0;margin:0 0 22px;display:grid;gap:14px}
+legend{font-family:var(--display);font-size:22px;font-weight:700;margin-bottom:12px;padding:0}
+.f{display:grid;gap:5px}
+.f label{font-size:13.5px;font-weight:600}
+.f input,.f select,.f textarea{padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);width:100%}
+.f textarea{min-height:70px;resize:vertical}
+.f .e{color:var(--err);font-size:12.5px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:520px){.fr{grid-template-columns:1fr}}
+.opts{display:grid;gap:10px}
+.opt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;border:1.5px solid var(--line);border-radius:var(--r);padding:13px 14px;cursor:pointer;background:var(--surface)}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt input{accent-color:var(--accent);width:18px;height:18px;margin:0}
+.opt small{display:block;color:var(--muted)}
+.opt .pv{font-weight:600;font-variant-numeric:tabular-nums}
+.pay-logo{display:inline-grid;place-items:center;min-width:54px;height:28px;border-radius:6px;font-size:12px;font-weight:700;color:#fff;margin-right:8px;padding:0 6px;vertical-align:middle}
+.navbtns{display:flex;justify-content:space-between;gap:10px;margin-top:8px}
+.demo{background:var(--accent-soft);border-radius:10px;padding:12px 14px;font-size:13.5px}
+.okbox{text-align:center;padding:40px 16px}
+.okbox .tick{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;margin:0 auto 16px;font-size:30px}
+.okbox h2{font-size:30px}
+.okbox .code{font-family:var(--display);font-size:22px;font-weight:700;color:var(--accent);margin:8px 0 18px}
+.okbox .panel{max-width:420px;margin:0 auto 20px;text-align:left}
+
+footer{border-top:1px solid var(--line);background:var(--surface);padding-block:28px;font-size:13.5px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 32px;justify-content:space-between}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,120px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:10px;z-index:20;transition:transform .3s;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px)}
+.toast.show{transform:translate(-50%,0)}
+.toast a{color:var(--gold);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <a class="logo" href="#katalog"><b>Sahifa</b><span>kitob doʻkoni</span></a>
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Kitob yoki muallif nomini yozing…" aria-label="Qidiruv">
+      </div>
+      <button class="cartbtn" id="cartBtn" aria-label="Savat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7h14l-1.2 12.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>
+        <span class="lbl">Savat</span><span class="n" id="cartN">0</span>
+      </button>
+    </div>
+    <nav class="chips" id="chips" aria-label="Janrlar"></nav>
+  </div>
+</header>
+
+<main><div class="wrap" id="app"></div></main>
+
+<footer>
+  <div class="wrap">
+    <div><b style="color:var(--ink)">Sahifa</b> · Toshkent, Chilonzor tumani · Har kuni 9:00–21:00 · +998 71 200 00 00</div>
+    <div>Bu sayt namuna: toʻlovlar haqiqiy emas. Ishga tushirishda Click, Payme yoki Uzum merchant hisobini ulash kerak.</div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const GENRES = ["Hammasi","Roman","Hikoyalar","Sheʼriyat","Bolalar","Tarix","Ilmiy-ommabop","Biznes"];
+
+const BOOKS = [
+ {id:"tong-yulduzi",t:"Tong yulduzi",a:"Dilnoza Rahimova",g:"Roman",p:89000,e:39000,pg:312,y:2025,r:4.8,c:["#1d3f8f","#e9b949"],pat:1,top:true,
+  d:"Fargʻona vodiysidagi kichik qishloqda oʻsgan Zarina shaharga oʻqishga ketadi. Oila, orzu va qaytish haqidagi iliq roman: har bir bob bir faslni hikoya qiladi.",
+  ch:[{h:"1-bob. Oʻrik gullaganda",b:["Qishloqqa bahor har yili bir kunda kelardi. Kechqurun hovlidagi oʻrik yalangʻoch turardi, ertalab esa butun shoxlari oq-pushti gulga burkanib, xuddi kimdir tunda unga roʻmol yopib ketgandek boʻlardi.","Zarina derazadan qarab, bu yil shu manzarani oxirgi marta koʻrayotganini oʻyladi. Stol ustida universitet chaqiruv qogʻozi yotardi. Onasi uni uch marta oʻqib chiqqan, har gal koʻzoynagini artib, yana boshidan boshlagan edi.","— Shaharda oʻrik bormi oʻzi? — deb soʻradi kichik ukasi Jasur, nonni choyga botirib.","— Bor, — dedi Zarina. — Lekin hammasi begona hovlilarda.","Otasi indamadi. U har doimgidek erta turib, ariqqa suv ochib qoʻygan, endi esa ayvon chetida tasbeh oʻgirib oʻtirardi. Zarina bilardiki, otasi soʻzlarni tejaydi: muhim gapni faqat bir marta aytadi."]},
+      {h:"2-bob. Bekatda",b:["Avtobus bekatiga butun mahalla chiqdi. Qoʻshni Mahbuba xola tugunchada issiq somsa, Rustam aka esa bir xalta olma olib keldi. Zarina bunchalik koʻp xayrlashuvga tayyor emas edi.","Otasi oxirida yaqinlashdi va qoʻliga kichkina daftar tutqazdi. Muqovasi eskirgan, burchaklari yumshab qolgan edi.","— Men ham yoshligimda shaharga ketganman, — dedi u. — Shu daftarga yozib borganman. Endi sen davom ettir.","Avtobus qoʻzgʻaldi. Zarina daftarni ochdi: birinchi sahifada qalam bilan chizilgan oʻrik daraxti, tagida esa sana bor edi. Oʻttiz yil oldingi bahor."]}]},
+ {id:"sukut-shahri",t:"Sukut shahri",a:"Akmal Toʻxtayev",g:"Roman",p:95000,e:42000,pg:368,y:2024,r:4.6,c:["#2b2f3a","#7fd1c7"],pat:2,
+  d:"Toshkentda bir kechada barcha soatlar toʻxtaydi. Yosh muhandis Bobur sababni izlab, shaharning unutilgan yer osti tunnellariga tushadi. Sirli detektiv-roman.",
+  ch:[{h:"1-bob. 03:17",b:["Soatlar aynan uchdan oʻn yetti daqiqa oʻtganda toʻxtadi. Devordagi, qoʻldagi, telefondagi — hammasi. Bobur buni metro bekatida, oxirgi poyezdni kutib oʻtirganda payqadi.","Tabloda raqamlar qotib qolgan, eskalator esa hech qanday ovozsiz harakatlanishda davom etardi. Bekatda undan boshqa faqat bitta odam bor edi: kulrang palto kiygan, qoʻlida eski karta ushlagan keksa ayol.","— Yana boshlandi, — dedi ayol, Boburga qaramay. — Qirq yil oldin ham shunday boʻlgan edi.","Bobur nimadir soʻramoqchi boʻldi, lekin tunnel ichidan kelayotgan shamol soʻzlarini olib ketdi. Poyezd kelmadi. Uning oʻrniga relslar boʻylab sekin, bir tekis yorugʻlik yaqinlashib kelardi."]}]},
+ {id:"choyxona-hikoyalari",t:"Choyxona hikoyalari",a:"Sherzod Mirzo",g:"Hikoyalar",p:62000,e:28000,pg:204,y:2025,r:4.9,c:["#7a2e1f","#f2c14e"],pat:3,top:true,
+  d:"Mahalla choyxonasida aytilgan oʻn ikki hikoya: kulgili, mungli va hayotiy. Har biri bir piyola choy ichguncha oʻqiladi.",
+  ch:[{h:"Birinchi hikoya. Toʻrtinchi piyola",b:["Choyxonada qoida oddiy: kim birinchi kelsa, oʻsha choy damlaydi. Bugun birinchi boʻlib Hakim aka keldi, shuning uchun choy odatdagidan achchiqroq chiqdi.","— Toʻrtinchi piyolagacha hech kim gapirmaydi, — dedi u. Bu ham qoida edi, faqat buni Hakim akaning oʻzi oʻylab topgan.","Biz jim oʻtirdik. Birinchi piyola sovuqni haydadi, ikkinchisi charchoqni, uchinchisi esa ertangi tashvishlarni. Toʻrtinchi piyolani quyganda Hakim aka tomogʻini qirib, hikoyani boshladi: «Bir paytlar bizning mahallada sigirini taksi qilib ishlatgan odam boʻlardi…»","Shu gapdan keyin choyxonada hech kim choyni eslamadi."]}]},
+ {id:"shamol-satrlari",t:"Shamol satrlari",a:"Gulnora Saidova",g:"Sheʼriyat",p:48000,e:22000,pg:128,y:2023,r:4.7,c:["#3a5f7d","#f7d9c4"],pat:4,poem:true,
+  d:"Tabiat, sevgi va sogʻinch haqida 70 dan ortiq sheʼr. Qisqa, yengil va yodda qoladigan satrlar.",
+  ch:[{h:"Tonggi sheʼrlar",b:["Ertalab deraza ochiq,\nchoy bugʻi oyna chizar.\nKechagi gaplar qochib,\nyangi kun meni izlar.","Daraxt shoxida qushcha\nbir soʻzni takror aytar.\nTushunmasam ham, shuncha\nyurakka quvonch qaytar.","Yoʻl chetida qor eriydi,\nariq ovozi tinmas.\nKim aytdi bahor kelmas deb?\nBahor hech qachon kech qolmas."]}]},
+ {id:"kichkina-ayiq",t:"Kichkina ayiq va oy",a:"Nodira Qosimova",g:"Bolalar",p:45000,e:19000,pg:48,y:2025,r:5.0,c:["#5a3fa0","#ffd166"],pat:5,top:true,
+  d:"Uxlashdan oldin oʻqish uchun ertak. Kichkina ayiq oyni oʻzi bilan uyga olib ketmoqchi boʻladi. 3–7 yosh uchun.",
+  ch:[{h:"Ertak",b:["Oʻrmon chetida kichkina ayiq yashardi. Uning eng yaxshi doʻsti osmondagi oy edi.","Har kecha ayiq tepalikka chiqib, oyga qoʻl silkitardi. Oy esa unga jimgina nur sochib javob berardi.","Bir kuni ayiq oʻyladi: «Agar oyni uyga olib ketsam, u har doim yonimda boʻladi!» U eng uzun narvonni topib, tepalikka sudrab chiqdi.","Narvon juda baland edi, lekin oy undan ham baland edi. Ayiq qaytib tushdi va xafa boʻlib ariq boʻyida oʻtirdi. Shunda u suvga qaradi va… suv ichida oy turardi! U ayiqqa juda yaqin, xuddi qoʻl choʻzsa yetadigandek edi."]}]},
+ {id:"ipak-yoli-karvonlari",t:"Ipak yoʻli karvonlari",a:"Farhod Usmonov",g:"Tarix",p:115000,e:49000,pg:420,y:2024,r:4.7,c:["#8a5a14","#f1e3c2"],pat:6,
+  d:"Samarqand, Buxoro va Xiva orqali oʻtgan savdo yoʻllari: karvonsaroylar, savdogarlar, ilm va gʻoyalar almashinuvi haqida ommabop tarix kitobi.",
+  ch:[{h:"Kirish. Yoʻl qanday paydo boʻldi",b:["«Ipak yoʻli» atamasi aslida juda yangi. Uni XIX asrda nemis geografi oʻylab topgan. Karvon boshqargan savdogarlar esa bunday nomni bilmagan: ular uchun bu shunchaki bir shahardan keyingisiga olib boradigan yoʻl edi.","Bu kitobda biz yoʻlni bitta chiziq sifatida emas, balki minglab mahalliy yoʻlaklar toʻri sifatida koʻramiz. Ipak ulardan oʻtgan mollarning faqat bittasi edi. Qogʻoz, shisha, ziravorlar, otlar va eng muhimi, gʻoyalar ham shu yoʻllardan oʻtgan.","Har bir bob bitta shaharga bagʻishlangan. Biz u yerda karvon qanday kutib olinganini, savdo qanday bitimlar asosida qilinganini va nega aynan shu joy chorrahaga aylanganini koʻrib chiqamiz."]}]},
+ {id:"miya-sirlari",t:"Miya qanday oʻrganadi",a:"Dr. Kamola Ergasheva",g:"Ilmiy-ommabop",p:99000,e:45000,pg:280,y:2025,r:4.8,c:["#0f6b6b","#e8f1ef"],pat:7,
+  d:"Xotira, diqqat va odatlar qanday ishlashini oddiy tilda tushuntiruvchi kitob. Talabalar, oʻqituvchilar va ota-onalar uchun amaliy maslahatlar bilan.",
+  ch:[{h:"1-bob. Unutish foydali",b:["Koʻpchilik unutishni miyaning nuqsoni deb oʻylaydi. Aslida, bu uning eng muhim vazifalaridan biri.","Tasavvur qiling: siz bugun koʻrgan har bir mashina raqami, eshitgan har bir gap va oʻqigan har bir reklama xotirangizda abadiy qolsa. Kerakli maʼlumotni topish uchun bu uyumni kavlashingizga toʻgʻri kelardi.","Miya har kecha uyqu paytida «tozalash» qiladi: muhim narsalarni mustahkamlaydi, keraksizlarini esa susaytiradi. Shuning uchun imtihon oldidan tunni bedor oʻtkazish yomon fikr: siz oʻqiganingizni saqlash imkoniyatidan oʻzingizni mahrum qilasiz."]}]},
+ {id:"kichik-biznes",t:"Kichik biznes: birinchi yil",a:"Javlon Hamidov",g:"Biznes",p:105000,e:47000,pg:256,y:2026,r:4.5,c:["#1c4d3a","#d4f0c0"],pat:8,nw:true,
+  d:"Oʻzbekistonda kichik biznes ochmoqchi boʻlganlar uchun amaliy qoʻllanma: gʻoyani tekshirish, xarajatlarni hisoblash, birinchi mijozlarni topish.",
+  ch:[{h:"1-bob. Gʻoyani arzon tekshiring",b:["Birinchi xato deyarli har doim bir xil: odamlar gʻoyani tekshirmasdan pul sarflaydi. Avval ijara, jihozlar va logotip, keyin esa mijoz qayerda degan savol.","Teskari tartibda harakat qiling. Avval 20 ta potentsial mijoz bilan gaplashing. Ularga mahsulotni sotmang, faqat muammolari haqida soʻrang. Agar 20 tadan kamida 5 tasi bu muammo uchun pul toʻlashga tayyor ekanini aytsa, demak siz toʻgʻri yoʻldasiz.","Bu bobda biz bitta hafta va 500 ming soʻmdan kam mablagʻ bilan gʻoyani qanday sinash mumkinligini koʻrib chiqamiz."]}]},
+ {id:"oxirgi-kuz",t:"Oxirgi kuz",a:"Dilnoza Rahimova",g:"Roman",p:79000,e:35000,pg:276,y:2023,r:4.4,c:["#6b2737","#f4c6a5"],pat:2,
+  d:"Keksa bogʻbon va uning nevarasi haqida: bir kuz davomida ular eski bogʻni qutqarishga harakat qiladi.",
+  ch:[{h:"1-bob. Barglar",b:["Bobo barglarni hech qachon supurmasdi. «Ular yerga koʻrpa», derdi u. Nevarasi Otabek buni avval injiqlik deb oʻylardi.","Endi esa, boboning ovozi telefonda zaif eshitilganda, Otabek poyezd derazasidan sariq barglarga qarab, u soʻzlarni boshqacha tushuna boshladi."]}]},
+ {id:"sehrli-sandiq",t:"Sehrli sandiq",a:"Nodira Qosimova",g:"Bolalar",p:52000,e:21000,pg:72,y:2024,r:4.8,c:["#c0392b","#ffe8a3"],pat:5,
+  d:"Buvisining uyidan topilgan sandiq Laylo va Sardorni turli ertaklar olamiga olib boradi. 6–10 yosh uchun rasmli kitob.",
+  ch:[{h:"1. Chordoqdagi sandiq",b:["Buvimning uyida chordoq bor edi, unga chiqish taqiqlangan edi. Albatta, biz birinchi kunning oʻzidayoq chiqdik.","Chordoqda chang, eski gilamlar va oʻrtada katta yogʻoch sandiq turardi. Uning qopqogʻida yulduzlar oʻyib ishlangan, qulfi esa yoʻq edi.","— Ochamizmi? — deb pichirladi Sardor.","Men javob berishga ulgurmadim: sandiq oʻzi sekin ochildi va ichidan iliq, shirin non hidi chiqdi."]}]},
+ {id:"yulduzlar-xaritasi",t:"Yulduzlar xaritasi",a:"Bahrom Nazarov",g:"Ilmiy-ommabop",p:88000,e:39000,pg:224,y:2026,r:4.6,c:["#141b3d","#9ab8ff"],pat:7,nw:true,
+  d:"Ulugʻbek rasadxonasidan zamonaviy teleskoplargacha: osmonni qanday oʻrganganimiz haqida. Shahar tashqarisida yulduzlarni kuzatish boʻyicha maslahatlar bilan.",
+  ch:[{h:"1-bob. Shahar chiroqlarini oʻchiring",b:["Toshkentda tunda osmonga qarasangiz, oʻnlab yulduzni koʻrasiz. Chimgon togʻlariga chiqsangiz, minglabini.","Yulduzlar kamaymagan. Shunchaki koʻchadagi chiroqlar ularni yashirib qoʻyadi. Bu kitobning birinchi maslahati oddiy: osmonni koʻrish uchun shahardan kamida 60 km uzoqlashing va koʻzingizga 20 daqiqa qorongʻulikka moslashish uchun vaqt bering."]}]},
+ {id:"kichik-qadamlar",t:"Kichik qadamlar",a:"Madina Yusupova",g:"Biznes",p:72000,e:32000,pg:198,y:2025,r:4.7,c:["#b4651e","#fff1d6"],pat:8,
+  d:"Har kuni 1% yaxshilanish qanday katta natijaga olib kelishi haqida. Vaqtni boshqarish va foydali odatlar boʻyicha qoʻllanma.",
+  ch:[{h:"1-bob. Ikki daqiqa qoidasi",b:["Har qanday yangi odatni ikki daqiqaga qisqartiring. «Har kuni kitob oʻqiyman» emas, «har kuni bitta sahifa oʻqiyman». «Sport bilan shugʻullanaman» emas, «krossovkani kiyaman».","Bu kulgili koʻrinadi, lekin maqsad natija emas, boshlash. Boshlash odatga aylangach, davom ettirish ancha oson boʻladi."]}]}
+];
+
+const DELIVERY = [
+ {id:"courier",n:"Kuryer (Toshkent shahri)",s:"1–2 kun ichida, eshikkacha",p:25000},
+ {id:"region",n:"Viloyatlarga pochta",s:"3–5 kun, eng yaqin pochta boʻlimigacha",p:35000},
+ {id:"express",n:"Tezkor yetkazish (Toshkent)",s:"Bugun, 3 soat ichida",p:45000},
+ {id:"pickup",n:"Doʻkondan olib ketish",s:"Chilonzor, Bunyodkor koʻchasi 12",p:0}
+];
+const PAY = [
+ {id:"click",n:"Click",s:"Click ilovasi orqali",col:"#00a3e0"},
+ {id:"payme",n:"Payme",s:"Payme ilovasi orqali",col:"#11a3a8"},
+ {id:"uzum",n:"Uzum Bank",s:"Uzcard yoki Humo kartasi",col:"#7b2cf2"},
+ {id:"cash",n:"Naqd pul",s:"Kitobni olganda toʻlaysiz",col:"#4c5568"}
+];
+const REGIONS = ["Toshkent shahri","Toshkent viloyati","Samarqand","Buxoro","Andijon","Fargʻona","Namangan","Qashqadaryo","Surxondaryo","Xorazm","Navoiy","Jizzax","Sirdaryo","Qoraqalpogʻiston"];
+const FREE_FROM = 300000;
+
+const fmt = n => n.toLocaleString("ru-RU").replace(/ |,/g," ") + " soʻm";
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const byId = id => BOOKS.find(b=>b.id===id);
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+
+let cart = store.get("sahifa-cart",[]);    // [{id, f:'p'|'e', q}]
+let progress = store.get("sahifa-read",{}); // {id: chapterIndex}
+let readerTheme = store.get("sahifa-rtheme","l");
+let readerSize = store.get("sahifa-rsize",19);
+let genre = "Hammasi", query = "", sort = "pop";
+let co = {step:0,name:"",phone:"",region:"Toshkent shahri",addr:"",note:"",del:"courier",pay:"click"};
+
+/* covers */
+function pattern(k,fg){
+  const pats={
+   1:`radial-gradient(circle at 70% 25%, ${fg} 0 14%, transparent 15%), repeating-radial-gradient(circle at 70% 25%, transparent 0 18px, ${fg} 18px 19px)`,
+   2:`repeating-linear-gradient(135deg, ${fg} 0 2px, transparent 2px 14px)`,
+   3:`repeating-conic-gradient(from 45deg at 50% 50%, ${fg} 0 25%, transparent 0 50%) 0 0/28px 28px`,
+   4:`repeating-linear-gradient(0deg, transparent 0 22px, ${fg} 22px 23px)`,
+   5:`radial-gradient(${fg} 2px, transparent 2.5px) 0 0/18px 18px`,
+   6:`conic-gradient(from 0deg at 50% 50%, ${fg} 0 12.5%, transparent 0 25%, ${fg} 0 37.5%, transparent 0 50%, ${fg} 0 62.5%, transparent 0 75%, ${fg} 0 87.5%, transparent 0) 50% 50%/40px 40px`,
+   7:`radial-gradient(circle at 20% 30%, ${fg} 1px, transparent 1.5px) 0 0/23px 23px, radial-gradient(circle at 60% 70%, ${fg} 1.4px, transparent 2px) 0 0/37px 37px`,
+   8:`linear-gradient(90deg, ${fg} 0 1px, transparent 1px) 0 0/24px 24px, linear-gradient(0deg, ${fg} 0 1px, transparent 1px) 0 0/24px 24px`
+  };
+  return pats[k]||pats[2];
+}
+function cover(b,badge=true){
+  const tag = !badge?"":b.nw?'<span class="badge">Yangi</span>':b.top?'<span class="badge">Xit</span>':"";
+  return `<div class="cover" style="background:linear-gradient(160deg,${b.c[0]},color-mix(in srgb,${b.c[0]} 70%,#000))">
+    <div class="pat" style="background:${pattern(b.pat,b.c[1])}"></div>${tag}
+    <div class="in" style="color:${b.c[1]}"><div class="ca">${esc(b.a)}</div><div class="medal"></div><div class="ct" style="color:#fff">${esc(b.t)}</div></div></div>`;
+}
+const stars = r => `★ ${r.toFixed(1)}`;
+
+/* cart */
+function saveCart(){store.set("sahifa-cart",cart);document.getElementById("cartN").textContent=cart.reduce((s,i)=>s+i.q,0)}
+function addToCart(id,f="p"){
+  const it=cart.find(i=>i.id===id&&i.f===f);
+  if(it){ if(f==="p") it.q++; } else cart.push({id,f,q:1});
+  saveCart();
+  toast(`«${esc(byId(id).t)}» savatga qoʻshildi <a href="#savat">Savatga oʻtish</a>`);
+}
+function lines(){return cart.map(i=>{const b=byId(i.id);return {...i,b,price:i.f==="e"?b.e:b.p}}).filter(l=>l.b)}
+function totals(){
+  const ls=lines(); const sub=ls.reduce((s,l)=>s+l.price*l.q,0);
+  const hasPaper=ls.some(l=>l.f==="p");
+  const d=DELIVERY.find(x=>x.id===co.del);
+  let ship=hasPaper?d.p:0; if(hasPaper&&sub>=FREE_FROM&&co.del!=="express") ship=0;
+  return {ls,sub,ship,total:sub+ship,hasPaper};
+}
+let tt;
+function toast(html){const t=document.getElementById("toast");t.innerHTML=html;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),3200)}
+
+/* views */
+function chips(){
+  document.getElementById("chips").innerHTML=GENRES.map(g=>`<button class="chip" aria-pressed="${g===genre}" data-g="${g}">${g}</button>`).join("");
+}
+function catalog(){
+  let list=BOOKS.filter(b=>(genre==="Hammasi"||b.g===genre)&&(!query||(b.t+" "+b.a).toLowerCase().includes(query.toLowerCase())));
+  if(sort==="cheap") list.sort((a,b)=>a.p-b.p);
+  else if(sort==="exp") list.sort((a,b)=>b.p-a.p);
+  else if(sort==="new") list.sort((a,b)=>b.y-a.y);
+  else list.sort((a,b)=>b.r-a.r);
+  const showHero=genre==="Hammasi"&&!query;
+  const hero=showHero?`<section class="hero">
+    <div><h1>Kitobni oʻqib koʻring, <em>keyin</em> sotib oling</h1>
+    <p>Har bir kitobning birinchi boblari bepul. Yoqsa, qogʻoz nusxani uyingizgacha yetkazamiz yoki elektron variantini darhol oching.</p>
+    <div class="perks"><div><i></i>300 000 soʻmdan bepul yetkazish</div><div><i></i>Click, Payme, Uzum, naqd</div><div><i></i>Butun Oʻzbekiston boʻylab</div></div></div>
+    <div class="shelf">${["choyxona-hikoyalari","tong-yulduzi","kichkina-ayiq"].map(id=>cover(byId(id),false)).join("")}</div>
+  </section>`:"";
+  return hero+`<div class="sechead"><h2>${query?`«${esc(query)}» boʻyicha`:genre==="Hammasi"?"Barcha kitoblar":genre}</h2>
+    <div style="display:flex;gap:12px;align-items:center"><span class="count">${list.length} ta kitob</span>
+    <select id="sort" aria-label="Saralash"><option value="pop"${sort==="pop"?" selected":""}>Mashhurlari</option><option value="new"${sort==="new"?" selected":""}>Yangilari</option><option value="cheap"${sort==="cheap"?" selected":""}>Arzonroq</option><option value="exp"${sort==="exp"?" selected":""}>Qimmatroq</option></select></div></div>
+  ${list.length?`<div class="grid">${list.map(b=>`<article class="card">
+     <a class="cv" href="#kitob-${b.id}" aria-label="${esc(b.t)}">${cover(b)}</a>
+     <a class="t" href="#kitob-${b.id}">${esc(b.t)}</a><div class="a">${esc(b.a)} · <span class="rate">${stars(b.r)}</span></div>
+     <div class="row"><span class="price">${fmt(b.p)}</span><button class="add" data-add="${b.id}">+ Savat</button></div>
+   </article>`).join("")}</div>`:`<div class="empty"><h2>Hech narsa topilmadi</h2><p class="count">Boshqa soʻz bilan qidirib koʻring yoki janrni oʻzgartiring.</p></div>`}`;
+}
+function bookView(b){
+  const read=progress[b.id];
+  return `<div class="crumb"><a href="#katalog">Katalog</a> / ${b.g} / ${esc(b.t)}</div>
+  <div class="book"><div>${cover(b)}</div>
+   <div><h1>${esc(b.t)}</h1><div class="by">${esc(b.a)}</div>
+    <span class="rate" style="font-size:15px">${stars(b.r)}</span>
+    <div class="meta"><div><small>Janr</small><b>${b.g}</b></div><div><small>Sahifalar</small><b>${b.pg}</b></div><div><small>Nashr yili</small><b>${b.y}</b></div><div><small>Til</small><b>Oʻzbek (lotin)</b></div></div>
+    <p class="desc">${esc(b.d)}</p>
+    <div class="fmt" role="radiogroup" aria-label="Format">
+      <label><input type="radio" name="fmt" value="p" checked><small>Qogʻoz kitob</small><b>${fmt(b.p)}</b><small>Yetkazib beriladi</small></label>
+      <label><input type="radio" name="fmt" value="e"><small>Elektron kitob</small><b>${fmt(b.e)}</b><small>Toʻlovdan soʻng darhol</small></label>
+    </div>
+    <div class="actions">
+      <button class="btn pri" id="addFmt" data-id="${b.id}">Savatga qoʻshish</button>
+      <a class="btn sec" href="#oqish-${b.id}">${read!=null?"Oʻqishni davom ettirish":"Bepul oʻqib koʻrish"}</a>
+    </div>
+    <p class="note">Bepul qism: ${b.ch.length} bob. Toʻliq matn xariddan soʻng ochiladi.</p>
+   </div></div>
+  <div style="margin-top:48px"><div class="sechead"><h2>Shu janrdagi boshqa kitoblar</h2></div>
+   <div class="grid">${BOOKS.filter(x=>x.g===b.g&&x.id!==b.id).concat(BOOKS.filter(x=>x.g!==b.g)).slice(0,4).map(x=>`<article class="card"><a class="cv" href="#kitob-${x.id}">${cover(x)}</a><a class="t" href="#kitob-${x.id}">${esc(x.t)}</a><div class="a">${esc(x.a)}</div><div class="row"><span class="price">${fmt(x.p)}</span><button class="add" data-add="${x.id}">+ Savat</button></div></article>`).join("")}</div></div>`;
+}
+function readerView(b){
+  const i=Math.min(progress[b.id]??0,b.ch.length-1); const ch=b.ch[i];
+  const pct=Math.round((i+1)/b.ch.length*100);
+  const last=i===b.ch.length-1;
+  return `<div class="crumb"><a href="#katalog">Katalog</a> / <a href="#kitob-${b.id}">${esc(b.t)}</a> / Oʻqish</div>
+  <div class="reader">
+   <div class="rtools">
+    <div class="g"><button data-sz="-1" aria-label="Harfni kichraytirish">A−</button><button data-sz="1" aria-label="Harfni kattalashtirish">A+</button></div>
+    <div class="g">${[["l","Kunduzgi"],["s","Sepiya"],["n","Tungi"]].map(([k,n])=>`<button data-rt="${k}" aria-pressed="${readerTheme===k}">${n}</button>`).join("")}</div>
+    <div class="g" style="font-size:13px;color:var(--muted)">${i+1} / ${b.ch.length} bob</div>
+   </div>
+   <div class="rprog"><i style="width:${pct}%"></i></div>
+   <div class="page ${readerTheme}" style="font-size:${readerSize}px">
+    <article class="${b.poem?"poem":""}"><div class="bk">${esc(b.t)} · ${esc(b.a)}</div><h2>${esc(ch.h)}</h2>
+     ${ch.b.map(p=>`<p>${esc(p)}</p>`).join("")}</article>
+    <div class="rnav"><button data-ch="${i-1}" ${i===0?"disabled":""}>← Oldingi bob</button><button data-ch="${i+1}" ${last?"disabled":""}>Keyingi bob →</button></div>
+    ${last?`<div class="endbox"><b>Bepul qism tugadi.</b><br>Davomini oʻqish uchun kitobni sotib oling.<div class="actions" style="justify-content:center;margin-top:12px"><button class="btn pri" data-buy="${b.id}" data-f="e">Elektron · ${fmt(b.e)}</button><button class="btn sec" data-buy="${b.id}" data-f="p" style="color:inherit;border-color:currentColor">Qogʻoz · ${fmt(b.p)}</button></div></div>`:""}
+   </div>
+  </div>`;
+}
+function cartView(){
+  const {ls,sub,ship,total,hasPaper}=totals();
+  if(!ls.length) return `<div class="empty"><h2>Savat boʻsh</h2><p class="count">Katalogdan kitob tanlang. Har birining boshini bepul oʻqish mumkin.</p><a class="btn pri" href="#katalog" style="margin-top:12px">Katalogga oʻtish</a></div>`;
+  const left=FREE_FROM-sub;
+  return `<h2 style="font-size:30px;margin-bottom:18px">Savat</h2><div class="two">
+   <div class="panel">${ls.map((l,k)=>`<div class="line">${cover(l.b,false)}
+     <div style="min-width:0"><h3>${esc(l.b.t)}</h3><div class="sub">${esc(l.b.a)} · ${l.f==="e"?"Elektron":"Qogʻoz"}</div>
+      ${l.f==="p"?`<div class="qty"><button data-q="${k}" data-d="-1" aria-label="Kamaytirish">−</button><span>${l.q}</span><button data-q="${k}" data-d="1" aria-label="Koʻpaytirish">+</button></div>`:""}<button class="rm" data-rm="${k}">Oʻchirish</button></div>
+     <div class="price">${fmt(l.price*l.q)}</div></div>`).join("")}</div>
+   <div class="panel sum">
+     <div class="r"><span>Kitoblar</span><span>${fmt(sub)}</span></div>
+     ${hasPaper?`<div class="r"><span>Yetkazish</span><span>${ship?"dan "+fmt(ship):"Bepul"}</span></div>
+     ${left>0?`<div class="hint">Bepul yetkazish uchun yana ${fmt(left)}</div><div class="meter"><i style="width:${Math.min(100,sub/FREE_FROM*100)}%"></i></div>`:`<div class="hint">Yetkazish bepul ✓</div>`}`:`<div class="r"><span>Yetkazish</span><span>Kerak emas</span></div>`}
+     <div class="r tot"><span>Jami</span><span>${fmt(total)}</span></div>
+     <a class="btn pri" href="#buyurtma">Rasmiylashtirish</a>
+     <a href="#katalog" style="text-align:center;font-size:14px">Xaridni davom ettirish</a>
+   </div></div>`;
+}
+function checkoutView(){
+  const T=totals();
+  if(!T.ls.length) return cartView();
+  const stepsN = T.hasPaper?["Maʼlumotlar","Yetkazish","Toʻlov"]:["Maʼlumotlar","Toʻlov"];
+  const cur = !T.hasPaper&&co.step===1?2:co.step;
+  const idx = T.hasPaper?cur:(cur===2?1:0);
+  let body="";
+  if(cur===0) body=`<fieldset><legend>Siz haqingizda</legend>
+     <div class="f"><label for="cname">Ism va familiya</label><input id="cname" autocomplete="name" value="${esc(co.name)}" placeholder="Masalan, Aziza Karimova"><span class="e" id="ename"></span></div>
+     <div class="f"><label for="cphone">Telefon raqami</label><input id="cphone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(co.phone)}" placeholder="+998 90 123 45 67"><span class="e" id="ephone"></span></div>
+   </fieldset><div class="navbtns"><a class="btn sec" href="#savat">← Savat</a><button class="btn pri" data-next="1">Davom etish</button></div>`;
+  if(cur===1) body=`<fieldset><legend>Yetkazib berish</legend>
+     <div class="opts">${DELIVERY.map(d=>{const free=T.sub>=FREE_FROM&&d.id!=="express"&&d.p>0;return `<label class="opt"><input type="radio" name="del" value="${d.id}"${co.del===d.id?" checked":""}><span><b>${d.n}</b><small>${d.s}</small></span><span class="pv">${d.p===0||free?"Bepul":fmt(d.p)}</span></label>`}).join("")}</div>
+     ${co.del!=="pickup"?`<div class="fr"><div class="f"><label for="creg">Viloyat</label><select id="creg">${REGIONS.map(r=>`<option${r===co.region?" selected":""}>${r}</option>`).join("")}</select></div>
+     <div class="f"><label for="caddr">Manzil</label><input id="caddr" autocomplete="street-address" value="${esc(co.addr)}" placeholder="Tuman, koʻcha, uy, xonadon"><span class="e" id="eaddr"></span></div></div>
+     <div class="f"><label for="cnote">Kuryer uchun izoh (ixtiyoriy)</label><textarea id="cnote" placeholder="Masalan, 3-qavat, domofon 24">${esc(co.note)}</textarea></div>`:`<div class="demo">Doʻkon manzili: Chilonzor, Bunyodkor koʻchasi 12. Buyurtma 2 soatda tayyor boʻladi.</div>`}
+   </fieldset><div class="navbtns"><button class="btn sec" data-back="0">← Orqaga</button><button class="btn pri" data-next="2">Toʻlovga oʻtish</button></div>`;
+  if(cur===2) body=`<fieldset><legend>Toʻlov usuli</legend>
+     <div class="opts">${PAY.filter(p=>T.hasPaper||p.id!=="cash").map(p=>`<label class="opt"><input type="radio" name="pay" value="${p.id}"${co.pay===p.id?" checked":""}><span><span class="pay-logo" style="background:${p.col}">${p.n.split(" ")[0]}</span><b>${p.n}</b><small style="margin-top:4px">${p.s}</small></span><span></span></label>`).join("")}</div>
+     <div class="demo">Namuna rejimi: «Toʻlash» tugmasi buyurtmani faqat shu sahifada yaratadi, pul yechilmaydi. Haqiqiy saytda bu yerda tanlangan toʻlov tizimining xavfsiz sahifasi ochiladi.</div>
+   </fieldset><div class="navbtns"><button class="btn sec" data-back="${T.hasPaper?1:0}">← Orqaga</button><button class="btn pri" id="payBtn">${co.pay==="cash"?"Buyurtma berish":"Toʻlash"} · ${fmt(T.total)}</button></div>`;
+  return `<h2 style="font-size:30px;margin-bottom:18px">Buyurtmani rasmiylashtirish</h2><div class="two"><div class="panel">
+    <div class="steps">${stepsN.map((s,k)=>`<div class="${k<idx?"done":k===idx?"on":""}">${k<idx?"✓ ":""}${s}</div>`).join("")}</div>${body}</div>
+   <div class="panel sum">${T.ls.map(l=>`<div class="r"><span style="min-width:0">${esc(l.b.t)} ${l.q>1?"×"+l.q:""}<br><small style="color:var(--muted)">${l.f==="e"?"Elektron":"Qogʻoz"}</small></span><span>${fmt(l.price*l.q)}</span></div>`).join("")}
+    ${T.hasPaper?`<div class="r"><span>Yetkazish</span><span>${T.ship?fmt(T.ship):"Bepul"}</span></div>`:""}
+    <div class="r tot"><span>Jami</span><span>${fmt(T.total)}</span></div></div></div>`;
+}
+let lastOrder=null;
+function doneView(){
+  if(!lastOrder) return catalog();
+  const o=lastOrder;
+  return `<div class="okbox"><div class="tick">✓</div><h2>Buyurtma qabul qilindi</h2><div class="code">${o.code}</div>
+   <div class="panel sum">
+    <div class="r"><span>Xaridor</span><span>${esc(o.name)}</span></div>
+    <div class="r"><span>Telefon</span><span>${esc(o.phone)}</span></div>
+    ${o.hasPaper?`<div class="r"><span>Yetkazish</span><span style="text-align:right">${o.del}</span></div>`:""}
+    <div class="r"><span>Toʻlov</span><span>${o.pay}</span></div>
+    <div class="r tot"><span>Jami</span><span>${fmt(o.total)}</span></div></div>
+   <p class="count" style="max-width:48ch;margin:0 auto 18px">${o.hasPaper?"Operatorimiz 30 daqiqa ichida qoʻngʻiroq qilib, yetkazish vaqtini kelishib oladi. ":""}${o.ebooks.length?"Elektron kitoblar «Oʻqish» boʻlimida ochiq.":""}</p>
+   <div class="actions" style="justify-content:center">${o.ebooks.map(id=>`<a class="btn pri" href="#oqish-${id}">«${esc(byId(id).t)}»ni oʻqish</a>`).join("")}<a class="btn sec" href="#katalog">Katalogga qaytish</a></div></div>`;
+}
+
+/* router */
+function render(){
+  const h=location.hash.slice(1)||"katalog";
+  const app=document.getElementById("app"); let html;
+  if(h.startsWith("kitob-")&&byId(h.slice(6))) html=bookView(byId(h.slice(6)));
+  else if(h.startsWith("oqish-")&&byId(h.slice(6))) html=readerView(byId(h.slice(6)));
+  else if(h==="savat") html=cartView();
+  else if(h==="buyurtma") html=checkoutView();
+  else if(h==="tayyor") html=doneView();
+  else html=catalog();
+  app.innerHTML=html; chips();
+}
+function go(h){ if(location.hash==="#"+h) render(); else location.hash=h; window.scrollTo(0,0); }
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+
+/* checkout validation */
+function readFields(){
+  const v=id=>{const el=document.getElementById(id);return el?el.value:null};
+  if(v("cname")!=null) co.name=v("cname").trim();
+  if(v("cphone")!=null) co.phone=v("cphone").trim();
+  if(v("creg")!=null) co.region=v("creg");
+  if(v("caddr")!=null) co.addr=v("caddr").trim();
+  if(v("cnote")!=null) co.note=v("cnote");
+}
+function validate(step){
+  let ok=true; const set=(id,m)=>{const e=document.getElementById(id);if(e)e.textContent=m;if(m)ok=false};
+  if(step===0){
+    set("ename",co.name.length<3?"Ismingizni kiriting":"");
+    const d=co.phone.replace(/\D/g,"");
+    set("ephone",/^(998)?\d{9}$/.test(d)?"":"Raqamni +998 XX XXX XX XX koʻrinishida kiriting");
+  }
+  if(step===1&&co.del!=="pickup") set("eaddr",co.addr.length<5?"Manzilni toʻliq yozing":"");
+  return ok;
+}
+
+/* events */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-add]"); if(!t) return;
+  if(t.dataset.g){genre=t.dataset.g;query="";document.getElementById("q").value="";go("katalog");return}
+  if(t.dataset.add){addToCart(t.dataset.add,"p");return}
+  if(t.id==="addFmt"){const f=document.querySelector('input[name="fmt"]:checked').value;addToCart(t.dataset.id,f);return}
+  if(t.dataset.buy){addToCart(t.dataset.buy,t.dataset.f);go("savat");return}
+  if(t.id==="cartBtn"){go("savat");return}
+  if(t.dataset.q!=null){const l=cart[+t.dataset.q];l.q+=+t.dataset.d;if(l.q<1)cart.splice(+t.dataset.q,1);saveCart();render();return}
+  if(t.dataset.rm!=null){cart.splice(+t.dataset.rm,1);saveCart();render();return}
+  if(t.dataset.sz){readerSize=Math.max(15,Math.min(26,readerSize+ +t.dataset.sz*2));store.set("sahifa-rsize",readerSize);render();return}
+  if(t.dataset.rt){readerTheme=t.dataset.rt;store.set("sahifa-rtheme",readerTheme);render();return}
+  if(t.dataset.ch!=null){const id=location.hash.slice(7);progress[id]=+t.dataset.ch;store.set("sahifa-read",progress);render();document.querySelector(".reader").scrollIntoView({behavior:"smooth"});return}
+  if(t.dataset.next){readFields();const T=totals();const cur=!T.hasPaper&&co.step===1?2:co.step;if(!validate(cur))return;co.step=+t.dataset.next;if(!T.hasPaper&&co.step===1)co.step=2;render();window.scrollTo(0,0);return}
+  if(t.dataset.back){readFields();co.step=+t.dataset.back;render();return}
+  if(t.id==="payBtn"){
+    const T=totals();const d=DELIVERY.find(x=>x.id===co.del);const p=PAY.find(x=>x.id===co.pay);
+    lastOrder={code:"SH-"+String(Date.now()).slice(-6),name:co.name,phone:co.phone,total:T.total,hasPaper:T.hasPaper,
+      del:d.id==="pickup"?d.n:`${d.n}, ${co.region}`,pay:p.n,ebooks:[...new Set(T.ls.filter(l=>l.f==="e").map(l=>l.b.id))]};
+    cart=[];saveCart();co.step=0;go("tayyor");return}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="sort"){sort=e.target.value;render()}
+  if(e.target.name==="del"){readFields();co.del=e.target.value;render()}
+  if(e.target.name==="pay"){co.pay=e.target.value;render()}
+});
+let qt;
+document.getElementById("q").addEventListener("input",e=>{clearTimeout(qt);qt=setTimeout(()=>{query=e.target.value.trim();if(query)genre="Hammasi";if(location.hash&&location.hash!=="#katalog")location.hash="katalog";else render()},180)});
+
+saveCart(); render();
+</script>
+</body>
+</html>
